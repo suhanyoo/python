@@ -24,6 +24,7 @@ def UserLogin(userid,userpw):
         print("아이디 또는 비밀번호가 틀렸습니다.")
     else:
         print("로그인 성공 하셨습니다")
+
     cursor.close()
     connection.close()
 
@@ -55,6 +56,8 @@ def UserIDSearch(Userphonenumber):
             print(x['UserID'])
 
 #UserIDSearch("010-3530-3370")
+
+#비밀번호 찾기 
 
 def UserSearchPW(UserID):
     
@@ -88,13 +91,34 @@ def UserJoin(UserID,UserPW,Name,Phonenumber):
         password ="ahemsdl00*",
         database ="BingoUserDB"
     )
+
     cursor = connection.cursor(dictionary=True)
-    UserPID = 0
+
+    UserPID = "a1"
+    for x in range(6):
+        RandomNumber = str(int(random.uniform(1,10)))
+        UserPID += RandomNumber
+
+    print(UserPID)
     query = "select * from UserInformation where idUserInformation = %s"
-    cursor.execute(UserPID)
+    cursor.execute(query,(UserPID,))
 
-    # query 변수에 담아서 SQL 인잭션 방지 하여서 파라미터 바인딩 
-    query = "insert into UserInformation (UserID,UserPW,Name,PhoneNumber) value (%s,%s,%s,%s)"
-    cursor.execute(query,(UserID,UserPW,Name,Phonenumber,))
+    result = cursor.fetchall()
     
+    if len(result) == 0:
+        print("ID가 겹치므로 다시 생성 해야 합니다.")
+    else:
+        print("ID가 겹치지 않음")
+    
+    query = "Insert into UserInformation (idUserInformation,UserID, UserPW, Name , PhoneNumber) value (%s,%s,%s,%s,%s)"
+    cursor.execute(query,(UserPID,UserID,UserPW,Name,Phonenumber,))
 
+    JoinComplete = cursor.fetchall()
+
+    if len(JoinComplete) == 0:
+        print("회원가입 성공 ")
+
+    else:
+        print("회원가입 실패 ")
+
+UserJoin("tngks7419","z1234","이현정","010-2432-3512")
