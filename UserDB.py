@@ -1,9 +1,10 @@
 #유저 정보 가져오기 DB 연동 한 코드 
 import mysql.connector
 import random
+import re
 
 
-# UserLogin Function 은 사용자가 로그인 가능 여부 
+#로그인  
 def UserLogin(userid,userpw):
     connection = mysql.connector.connect(
         host = "localhost",
@@ -28,11 +29,7 @@ def UserLogin(userid,userpw):
     cursor.close()
     connection.close()
 
-# 사용자가 접속 하면 사용자 ID 를 넣어서 조회 하고 결과를 변수에 담아서 반환 한다. 
-#UserLogin("tngks7878","ahemsdl00*")
-
 #아이디 찾기 
-
 def UserIDSearch(Userphonenumber):
     
     connection = mysql.connector.connect(
@@ -55,10 +52,7 @@ def UserIDSearch(Userphonenumber):
         for x in result:
             print(x['UserID'])
 
-#UserIDSearch("010-3530-3370")
-
 #비밀번호 찾기 
-
 def UserSearchPW(UserID):
     
     connection = mysql.connector.connect(
@@ -80,45 +74,84 @@ def UserSearchPW(UserID):
     else:
         for x in result:
             print(x['UserPW'])
+    
+    cursor.close()
+    connection.close()
 
 
-#회원가입 로직 
+#회원가입 
 def UserJoin(UserID,UserPW,Name,Phonenumber):
- 
+    JoinIDResult = False
+
     connection = mysql.connector.connect(
         host = "localhost",
         user ="root",
         password ="ahemsdl00*",
         database ="BingoUserDB"
     )
+    cursor = connection.cursor(dictionary=True)
+
+    # User ID 생성 후 조회 하여 ID 중복 여부 확인 하는 로직 
+    for x in range(6):
+        UserPID = "a1"
+        for x in range(6):
+            RandomNumber = str(int(random.uniform(1,10)))
+            UserPID += RandomNumber
+
+        query = "select * from UserInformation where idUserInformation = %s"
+        cursor.execute(query,(UserPID,))
+        result = cursor.fetchall()
+        
+    # ID 값을 조회 하여 중복 된 ID가 있는지 확인 
+        if len(result) == 0:
+            JoinIDResult = False
+            break
+        else:
+            JoinIDResult = True
+        
+
+    # ID 중복 된 값 의 진위 여부에 따른 회원정보 넣기 
+    if JoinIDResult == True:
+        print(JoinIDResult)
+    else:
+        query = "Insert into UserInformation (idUserInformation,UserID, UserPW, Name , PhoneNumber) value (%s,%s,%s,%s,%s)"
+        cursor.execute(query,(UserPID,UserID,UserPW,Name,Phonenumber,))
+        connection.commit()
+    
+    cursor.close()
+    connection.close()
+
+#비밀번호 변경 
+def UserPasswordExcahge(phonenumber,NewPassword):
+    
+    # 비밀번호 특수문자 여부 확인 
+    global NewPasswordResult
+    NewPasswordResult = False
+    Patten = r"[\.\!\@\#\$\%\^\&\*\(\)\-\\]"
+    matches = re.findall(Patten,NewPassword)
+    
+    if len(matches) > 0:
+        NewPasswordResult = True
+        return NewPasswordResult
+    else:
+        NewPasswordResult = False
+
+    connection = mysql.connector.connect (
+        host = "localhost",
+        user = "root",
+        password = "ahemsdl00*",
+        database = "BingoUserDB"
+    )
 
     cursor = connection.cursor(dictionary=True)
 
-    UserPID = "a1"
-    for x in range(6):
-        RandomNumber = str(int(random.uniform(1,10)))
-        UserPID += RandomNumber
+    query = "update UserInformation set UserPW = %s where PhoneNumber = %s"
+    cursor.execute(query,(NewPassword,phonenumber,))
+    cursor.fetchall()
+    connection.commit()
 
-    print(UserPID)
-    query = "select * from UserInformation where idUserInformation = %s"
-    cursor.execute(query,(UserPID,))
+    cursor.close()
+    connection.close()
 
-    result = cursor.fetchall()
-    
-    if len(result) == 0:
-        print("ID가 겹치므로 다시 생성 해야 합니다.")
-    else:
-        print("ID가 겹치지 않음")
-    
-    query = "Insert into UserInformation (idUserInformation,UserID, UserPW, Name , PhoneNumber) value (%s,%s,%s,%s,%s)"
-    cursor.execute(query,(UserPID,UserID,UserPW,Name,Phonenumber,))
 
-    JoinComplete = cursor.fetchall()
 
-    if len(JoinComplete) == 0:
-        print("회원가입 성공 ")
-
-    else:
-        print("회원가입 실패 ")
-
-UserJoin("tngks7419","z1234","이현정","010-2432-3512")
